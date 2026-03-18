@@ -142,34 +142,27 @@ ls mcp-server/dist/index.js
 
 ## STEP 6: เชื่อม MCP Server กับ Claude Desktop
 
-### 6.1 หา path เต็มของโปรเจค
+### วิธีอัตโนมัติ (แนะนำ)
 
 ```bash
-pwd
-# เช่น /Users/yourname/Projects/ClaudeAgent
+npm run setup:cowork
 ```
 
-### 6.2 แก้ไข Claude Desktop Config
+สคริปต์จะ:
+1. ดีเทค path ของโปรเจคอัตโนมัติ
+2. หา `claude_desktop_config.json` ตาม OS (Mac/Windows/Linux)
+3. เพิ่ม/อัปเดต `claude-gank` MCP server พร้อม `cwd` ที่ถูกต้อง
+4. ไม่ลบ MCP servers อื่นที่มีอยู่แล้ว
 
-**macOS:**
-```bash
-# เปิดไฟล์ config
-open ~/Library/Application\ Support/Claude/claude_desktop_config.json
+> รันซ้ำได้ — ถ้าตั้งค่าแล้วจะแจ้งว่าไม่ต้องแก้อะไร
 
-# ถ้าไม่มีไฟล์ ให้สร้างใหม่:
-mkdir -p ~/Library/Application\ Support/Claude
-nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
-```
+### วิธี manual (ถ้าต้องการแก้เอง)
 
-**Windows:**
-```
-# เปิด file path นี้
-%APPDATA%\Claude\claude_desktop_config.json
-```
+แก้ไข `claude_desktop_config.json`:
 
-### 6.3 เพิ่ม MCP Server Config
-
-ถ้าไฟล์ว่าง/ไม่มี ให้สร้างใหม่:
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+**Linux:** `~/.config/Claude/claude_desktop_config.json`
 
 ```json
 {
@@ -177,28 +170,13 @@ nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
     "claude-gank": {
       "command": "node",
       "args": ["mcp-server/dist/index.js"],
-      "cwd": "/Users/yourname/Projects/ClaudeAgent"
+      "cwd": "/path/จริง/ของ/ClaudeAgent"
     }
   }
 }
 ```
 
-ถ้ามี mcpServers อยู่แล้ว ให้เพิ่ม `"claude-gank"` เข้าไป:
-
-```json
-{
-  "mcpServers": {
-    "existing-server": { "..." : "..." },
-    "claude-gank": {
-      "command": "node",
-      "args": ["mcp-server/dist/index.js"],
-      "cwd": "/Users/yourname/Projects/ClaudeAgent"
-    }
-  }
-}
-```
-
-> **สำคัญ:** `cwd` ต้องเป็น **absolute path** ที่ถูกต้อง (ตาม Step 6.1)
+> **สำคัญ:** `cwd` ต้องเป็น **absolute path** (ใช้ `pwd` ดูได้)
 
 ### 6.4 Restart Claude Desktop
 
@@ -368,6 +346,7 @@ Claude Desktop → Cowork → Dispatch → สแกน QR code ด้วยม�
 | สร้าง DB | `npm run seed` | สร้าง/เพิ่ม agents (20 ตัว) |
 | Dashboard | `npm run dev` | เปิด UI ที่ :3000 |
 | Build MCP | `npm run mcp:build` | Compile MCP server |
+| Setup Cowork | `npm run setup:cowork` | ตั้งค่า claude_desktop_config.json อัตโนมัติ |
 | Test MCP | `npm run mcp:start` | ทดสอบรัน MCP (stdio) |
 | Build app | `npm run build` | Production build |
 
