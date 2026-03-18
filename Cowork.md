@@ -226,22 +226,27 @@ Output: full mission data as JSON
 | `claude-gank://pending-missions` | JSON missions ที่รอทำ (พร้อม system_prompt) |
 | `claude-gank://missions` | JSON missions ล่าสุด 50 รายการ |
 
-## Agent IDs
+## Agent IDs (20 ตัว)
 
 | ID | Agent | Category |
 |----|-------|----------|
 | `secretary` | เลขา | CORE |
+| `translator` | นักแปล | CORE |
+| `project-mgr` | ผู้จัดการโปรเจค | CORE |
 | `coder` | นักเขียนโค้ด | TECH |
 | `sysadmin` | ผู้ดูแลระบบ | TECH |
 | `automator` | นักสร้างออโตเมชัน | TECH |
 | `prompt-eng` | นักออกแบบ Prompt | TECH |
+| `data-scientist` | นักวิทยาศาสตร์ข้อมูล | TECH |
 | `course-designer` | นักออกแบบคอร์ส | CREATIVE |
 | `content-creator` | นักสร้างคอนเทนต์ | CREATIVE |
 | `graphic` | กราฟฟิค | CREATIVE |
 | `creative` | ครีเอทีฟ | CREATIVE |
+| `video-producer` | โปรดิวเซอร์วิดีโอ | CREATIVE |
 | `marketer` | นักการตลาด | BIZ |
 | `strategist` | นักวางกลยุทธ์ | BIZ |
 | `journalist` | นักข่าว | BIZ |
+| `legal-advisor` | ที่ปรึกษากฎหมาย | BIZ |
 | `accountant` | นักบัญชี | FINANCE |
 | `gold-trader` | นักเทรดทอง | FINANCE |
 | `stock-analyst` | นักวิเคราะห์หุ้น | FINANCE |
@@ -262,10 +267,25 @@ Output: full mission data as JSON
 → dispatch_mission + process_next_mission + complete_mission
 
 "เขียนบทความเรื่อง AI สำหรับธุรกิจ"
-→ dispatch_mission (เลขา) → dispatch_mission (content-creator) → process + complete
+→ dispatch_mission (เลขา route) → dispatch_mission (content-creator) → process + complete
 
 "วิเคราะห์แนวโน้มราคาทองสัปดาห์นี้"
 → dispatch_mission(agent_id="gold-trader") → process + complete
+
+"แปลเอกสารนี้เป็นภาษาอังกฤษ"
+→ dispatch_mission(agent_id="translator") → process + complete
+
+"ตรวจสัญญา NDA ว่ามีข้อควรระวังอะไร"
+→ dispatch_mission(agent_id="legal-advisor") → process + complete
+
+"วิเคราะห์ข้อมูลยอดขายด้วย ML"
+→ dispatch_mission(agent_id="data-scientist") → process + complete
+
+"เขียน script วิดีโอ YouTube เรื่อง AI"
+→ dispatch_mission(agent_id="video-producer") → process + complete
+
+"วางแผนโปรเจค mobile app ให้หน่อย"
+→ dispatch_mission(agent_id="project-mgr") → process + complete
 
 "ส่งข้อความให้ทุกคนว่าพรุ่งนี้มี sprint review"
 → send_message(from="secretary", broadcast)
