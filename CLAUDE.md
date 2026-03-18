@@ -1,5 +1,32 @@
 # CLAUDE.md — Claude GANK Command Center
 
+## Auto-Install (สำหรับ Claude Code)
+
+เมื่อผู้ใช้วาง GitHub link แล้วสั่ง "ติดตั้งให้" ให้ทำตามขั้นตอนนี้ **ทั้งหมดอัตโนมัติ**:
+
+```bash
+# Step 1: ติดตั้ง dependencies
+npm install
+
+# Step 2: สร้าง Database + Seed 20 AI Agents
+npm run seed
+
+# Step 3: Build MCP Server สำหรับ Cowork
+npm run mcp:build
+
+# Step 4: ทดสอบ build
+npm run build
+```
+
+หลังจากรันครบ 4 ขั้นตอน ให้แจ้งผู้ใช้ว่า:
+1. **เปิด Dashboard:** `npm run dev` → http://localhost:3000
+2. **เปิด Bird's Eye View:** http://localhost:3000/birdseye
+3. **เชื่อม Cowork:** แก้ `claude_desktop_config.json` (ดู SETUP.md Step 6)
+
+ไม่ต้องตั้ง API key หรือ environment variable ใดๆ
+
+---
+
 ## Project Overview
 
 Multi-Agent AI Dashboard ที่ควบคุม AI agents 20 ตัวจาก dashboard เดียว

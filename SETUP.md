@@ -47,8 +47,8 @@
 ## STEP 1: Clone โปรเจค
 
 ```bash
-git clone <repo-url> ClaudeAgent
-cd ClaudeAgent
+git clone https://github.com/kpcrmv4/claude-gank.git
+cd claude-gank
 ```
 
 ---

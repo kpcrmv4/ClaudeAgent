@@ -42,20 +42,32 @@
 
 ## Quick Start
 
-### Windows
+### วิธีที่ 1: Claude Code (แนะนำ — วาง link แล้วสั่งเลย)
+
+คัดลอก link นี้แล้ววางใน Claude Code:
+```
+https://github.com/kpcrmv4/claude-gank
+```
+แล้วพิมพ์:
+```
+clone repo นี้แล้วติดตั้งให้
+```
+Claude Code จะ clone → install → seed → build ให้อัตโนมัติ
+
+### วิธีที่ 2: Windows (ดับเบิ้ลคลิก)
 ```
 ดับเบิ้ลคลิก setup.bat
 ```
 
-### Mac / Linux
+### วิธีที่ 3: Mac / Linux
 ```bash
 chmod +x setup.sh && ./setup.sh
 ```
 
-### Manual
+### วิธีที่ 4: Manual
 ```bash
-git clone https://github.com/YOUR_USERNAME/ClaudeAgent.git
-cd ClaudeAgent
+git clone https://github.com/kpcrmv4/claude-gank.git
+cd claude-gank
 npm install
 npm run seed        # สร้าง 20 agents
 npm run mcp:build   # Build MCP Server
