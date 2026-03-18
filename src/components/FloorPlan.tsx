@@ -15,41 +15,46 @@ export interface ZoneConfig {
   height: number;
 }
 
-// Office zones layout — 5 zones on an 1100x700 canvas
+// Office zones layout — 5 zones on an 1200x820 canvas (20 agents)
 export const ZONES: ZoneConfig[] = [
-  { id: "TECH",     label: "TECH ZONE",     color: "#06b6d4", x: 40,  y: 40,  width: 460, height: 280 },
-  { id: "CREATIVE", label: "CREATIVE ZONE", color: "#a855f7", x: 560, y: 40,  width: 460, height: 280 },
-  { id: "BIZ",      label: "BIZ ZONE",      color: "#ef4444", x: 40,  y: 380, width: 460, height: 200 },
-  { id: "FINANCE",  label: "FINANCE ZONE",  color: "#f59e0b", x: 560, y: 380, width: 460, height: 200 },
-  { id: "CORE",     label: "CORE",          color: "#22c55e", x: 300, y: 620, width: 460, height: 100 },
+  { id: "TECH",     label: "TECH ZONE",     color: "#06b6d4", x: 40,  y: 40,  width: 520, height: 280 },
+  { id: "CREATIVE", label: "CREATIVE ZONE", color: "#a855f7", x: 600, y: 40,  width: 520, height: 280 },
+  { id: "BIZ",      label: "BIZ ZONE",      color: "#ef4444", x: 40,  y: 380, width: 520, height: 220 },
+  { id: "FINANCE",  label: "FINANCE ZONE",  color: "#f59e0b", x: 600, y: 380, width: 520, height: 220 },
+  { id: "CORE",     label: "CORE",          color: "#22c55e", x: 250, y: 650, width: 660, height: 120 },
 ];
 
 // Desk positions within each zone for agents
 export const DESK_POSITIONS: Record<string, { x: number; y: number }[]> = {
   TECH: [
-    { x: 100, y: 100 },
-    { x: 250, y: 100 },
-    { x: 100, y: 210 },
-    { x: 250, y: 210 },
+    { x: 110, y: 100 },  // coder
+    { x: 260, y: 100 },  // sysadmin
+    { x: 410, y: 100 },  // automator
+    { x: 110, y: 210 },  // prompt-eng
+    { x: 260, y: 210 },  // data-scientist
   ],
   CREATIVE: [
-    { x: 620, y: 100 },
-    { x: 770, y: 100 },
-    { x: 620, y: 210 },
-    { x: 770, y: 210 },
+    { x: 670, y: 100 },  // course-designer
+    { x: 820, y: 100 },  // content-creator
+    { x: 970, y: 100 },  // graphic
+    { x: 670, y: 210 },  // creative
+    { x: 820, y: 210 },  // video-producer
   ],
   BIZ: [
-    { x: 100, y: 440 },
-    { x: 250, y: 440 },
-    { x: 400, y: 440 },
+    { x: 110, y: 450 },  // marketer
+    { x: 260, y: 450 },  // strategist
+    { x: 410, y: 450 },  // journalist
+    { x: 110, y: 530 },  // legal-advisor
   ],
   FINANCE: [
-    { x: 620, y: 440 },
-    { x: 770, y: 440 },
-    { x: 920, y: 440 },
+    { x: 670, y: 450 },  // accountant
+    { x: 820, y: 450 },  // gold-trader
+    { x: 970, y: 450 },  // stock-analyst
   ],
   CORE: [
-    { x: 530, y: 650 },
+    { x: 430, y: 700 },  // secretary
+    { x: 580, y: 700 },  // translator
+    { x: 730, y: 700 },  // project-mgr
   ],
 };
 
@@ -82,7 +87,7 @@ export function FloorPlan() {
           <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" strokeWidth="0.5" opacity="0.3" />
         </pattern>
       </defs>
-      <rect width="1100" height="760" fill="url(#floor-grid)" />
+      <rect width="1200" height="820" fill="url(#floor-grid)" />
 
       {/* Zone areas */}
       {ZONES.map((zone) => (
@@ -123,24 +128,30 @@ export function FloorPlan() {
       )}
 
       {/* Decorations — plants, water cooler, etc */}
-      {/* Plant 1 */}
-      <g transform="translate(510, 180)">
+      {/* Plant 1 — between TECH and CREATIVE */}
+      <g transform="translate(570, 180)">
         <rect x={-4} y={4} width={8} height={10} rx={2} fill="#2a3a55" />
         <circle cx={0} cy={0} r={6} fill="#22c55e" opacity={0.3} />
         <circle cx={-3} cy={2} r={4} fill="#22c55e" opacity={0.25} />
         <circle cx={3} cy={1} r={4} fill="#22c55e" opacity={0.25} />
       </g>
-      {/* Plant 2 */}
-      <g transform="translate(510, 470)">
+      {/* Plant 2 — between BIZ and FINANCE */}
+      <g transform="translate(570, 480)">
         <rect x={-4} y={4} width={8} height={10} rx={2} fill="#2a3a55" />
         <circle cx={0} cy={0} r={6} fill="#22c55e" opacity={0.3} />
         <circle cx={-3} cy={2} r={4} fill="#22c55e" opacity={0.25} />
       </g>
-      {/* Water cooler */}
-      <g transform="translate(510, 330)">
+      {/* Water cooler — center */}
+      <g transform="translate(570, 340)">
         <rect x={-8} y={-15} width={16} height={30} rx={3} fill="#1a2235" stroke="#334155" strokeWidth={0.5} />
         <rect x={-6} y={-12} width={12} height={10} rx={2} fill="#06b6d4" opacity={0.15} />
         <text x={0} y={22} fill="#64748b" fontSize="7" textAnchor="middle" fontFamily="monospace">WATER</text>
+      </g>
+      {/* Coffee machine — near CORE */}
+      <g transform="translate(180, 710)">
+        <rect x={-8} y={-10} width={16} height={20} rx={2} fill="#1a2235" stroke="#334155" strokeWidth={0.5} />
+        <rect x={-5} y={-7} width={10} height={8} rx={1} fill="#8B4513" opacity={0.2} />
+        <text x={0} y={17} fill="#64748b" fontSize="6" textAnchor="middle" fontFamily="monospace">COFFEE</text>
       </g>
     </g>
   );

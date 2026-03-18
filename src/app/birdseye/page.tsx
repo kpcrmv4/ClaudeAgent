@@ -17,11 +17,11 @@ const SPRITE_COLORS: Record<string, string> = {
 
 // Map agent IDs to their category for desk assignment
 const AGENT_CATEGORY_ORDER: Record<string, string[]> = {
-  TECH: ["coder", "sysadmin", "automator", "prompt-eng"],
-  CREATIVE: ["course-designer", "content-creator", "graphic", "creative"],
-  BIZ: ["marketer", "strategist", "journalist"],
+  TECH: ["coder", "sysadmin", "automator", "prompt-eng", "data-scientist"],
+  CREATIVE: ["course-designer", "content-creator", "graphic", "creative", "video-producer"],
+  BIZ: ["marketer", "strategist", "journalist", "legal-advisor"],
   FINANCE: ["accountant", "gold-trader", "stock-analyst"],
-  CORE: ["secretary"],
+  CORE: ["secretary", "translator", "project-mgr"],
 };
 
 function getAgentPosition(agentId: string): { x: number; y: number } | null {
@@ -224,7 +224,7 @@ export default function BirdEyePage() {
       {/* Main SVG Canvas */}
       <div className="relative bg-bg-card rounded-lg border border-border-dim overflow-hidden">
         <svg
-          viewBox="0 0 1100 760"
+          viewBox="0 0 1200 820"
           className="w-full h-auto"
           style={{ minHeight: "500px", maxHeight: "80vh" }}
         >
@@ -271,11 +271,11 @@ export default function BirdEyePage() {
           <Particles triggers={particleTriggers} />
 
           {/* Timestamp overlay */}
-          <text x={1060} y={745} fill="#64748b" fontSize="9" fontFamily="monospace" textAnchor="end">
+          <text x={1160} y={805} fill="#64748b" fontSize="9" fontFamily="monospace" textAnchor="end">
             {new Date().toLocaleTimeString("th-TH")}
           </text>
           {/* Camera indicator */}
-          <g transform="translate(30, 735)">
+          <g transform="translate(30, 800)">
             <circle cx={0} cy={0} r={4} fill={isLive ? "#22c55e" : "#ef4444"} className={isLive ? "anim-screen-glow" : ""} />
             <text x={10} y={3} fill="#64748b" fontSize="8" fontFamily="monospace">CAM-01</text>
           </g>

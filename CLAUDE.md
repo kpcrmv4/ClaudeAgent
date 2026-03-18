@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Multi-Agent AI Dashboard ที่ควบคุม AI agents 15 ตัวจาก dashboard เดียว
+Multi-Agent AI Dashboard ที่ควบคุม AI agents 20 ตัวจาก dashboard เดียว
 ประมวลผลทั้งหมดผ่าน **Claude Cowork** (ใช้ subscription ที่จ่ายอยู่แล้ว — ไม่ต้องใช้ API key)
 
 ```
@@ -17,7 +17,7 @@ Phone → Dispatch → Cowork → MCP Server → หยิบงาน → ค�
 
 ```bash
 npm install              # ติดตั้ง dependencies
-npm run seed             # สร้าง 15 agents
+npm run seed             # สร้าง 20 agents (เพิ่มใหม่อัตโนมัติถ้ามีอยู่แล้ว)
 npm run dev              # Dashboard → http://localhost:3000
 npm run mcp:build        # Build MCP Server สำหรับ Cowork
 ```
@@ -50,6 +50,7 @@ Dashboard → Anthropic SDK → Claude API → ผลลัพธ์
 src/
 ├── app/
 │   ├── agents/page.tsx         # Agent Grid — คลิกเปิด MissionPanel สั่งงาน
+│   ├── birdseye/page.tsx       # Bird's Eye View — CCTV floor plan + dispatch
 │   ├── war-room/page.tsx       # War Room — ภาพรวมทีม + Auto-Dispatch
 │   ├── comms/page.tsx          # Comms — message bus ระหว่าง agents
 │   ├── missions/page.tsx       # Mission Logs ทั้งหมด
@@ -63,7 +64,11 @@ src/
 │   ├── Sidebar.tsx
 │   ├── AgentCard.tsx            # Card with SVG pixel avatar + status
 │   ├── MissionPanel.tsx         # Modal — สั่งงาน + ดูผลลัพธ์ (polling)
-│   └── DeployAgentModal.tsx     # Modal — สร้าง agent ใหม่
+│   ├── DeployAgentModal.tsx     # Modal — สร้าง agent ใหม่
+│   ├── FloorPlan.tsx            # SVG office floor plan with zones + desks
+│   ├── BirdEyeAgent.tsx         # SVG pixel character with state animations
+│   ├── MessageLine.tsx          # Dashed lines between communicating agents
+│   └── Particles.tsx            # Confetti/sparkle/smoke effects
 ├── lib/
 │   ├── types.ts                 # Agent, Mission, Message, Memory, Skill
 │   ├── db.ts                    # SQLite schema + CRUD (5 tables)
@@ -71,7 +76,7 @@ src/
 mcp-server/
 │   └── src/index.ts             # MCP Server v2 — 10 tools + 3 resources
 scripts/
-│   └── seed.ts                  # Seed 15 agents
+│   └── seed.ts                  # Seed 20 agents (auto-adds new agents to existing DB)
 ```
 
 ## Database Schema
@@ -88,22 +93,27 @@ scripts/
 - Agent: `STANDBY → WORKING → STANDBY` (หรือ `→ ERROR`)
 - Mission: `PENDING → RUNNING → COMPLETED` (หรือ `→ FAILED`)
 
-## Agent Team (15 ตัว)
+## Agent Team (20 ตัว)
 
 | ID | Name | Cat | Model | Role |
 |----|------|-----|-------|------|
 | secretary | เลขา | CORE | sonnet | รับงาน วิเคราะห์ ส่งต่อ |
+| translator | นักแปล | CORE | sonnet | แปลภาษา TH↔EN↔JP↔CN |
+| project-mgr | ผู้จัดการโปรเจค | CORE | sonnet | จัดลำดับงาน ติดตาม deadline |
 | coder | นักเขียนโค้ด | TECH | opus | เขียนโค้ด debug |
 | sysadmin | ผู้ดูแลระบบ | TECH | opus | server, DevOps |
 | automator | นักสร้างออโตเมชัน | TECH | opus | workflow อัตโนมัติ |
 | prompt-eng | นักออกแบบ Prompt | TECH | sonnet | prompt engineering |
+| data-scientist | นักวิทยาศาสตร์ข้อมูล | TECH | opus | ML, data pipeline, AI |
 | course-designer | นักออกแบบคอร์ส | CREATIVE | sonnet | หลักสูตรออนไลน์ |
 | content-creator | นักสร้างคอนเทนต์ | CREATIVE | sonnet | คอนเทนต์ทุกรูปแบบ |
 | graphic | กราฟฟิค | CREATIVE | sonnet | กราฟิก, UI/UX |
 | creative | ครีเอทีฟ | CREATIVE | sonnet | ไอเดียสร้างสรรค์ |
+| video-producer | โปรดิวเซอร์วิดีโอ | CREATIVE | sonnet | storyboard, production |
 | marketer | นักการตลาด | BIZ | sonnet | การตลาดดิจิทัล |
 | strategist | นักวางกลยุทธ์ | BIZ | opus | กลยุทธ์ธุรกิจ |
 | journalist | นักข่าว | BIZ | sonnet | วิจัย สรุปข่าว |
+| legal-advisor | ที่ปรึกษากฎหมาย | BIZ | opus | สัญญา PDPA กฎหมายธุรกิจ |
 | accountant | นักบัญชี | FINANCE | opus | บัญชี การเงิน |
 | gold-trader | นักเทรดทอง | FINANCE | opus | ตลาดทองคำ |
 | stock-analyst | นักวิเคราะห์หุ้น | FINANCE | opus | หุ้น ตลาดหลักทรัพย์ |
