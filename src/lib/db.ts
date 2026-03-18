@@ -52,8 +52,8 @@ function initSchema(db: Database.Database) {
 
     CREATE TABLE IF NOT EXISTS messages (
       id TEXT PRIMARY KEY,
-      from_agent_id TEXT NOT NULL REFERENCES agents(id),
-      to_agent_id TEXT REFERENCES agents(id),
+      from_agent_id TEXT NOT NULL,
+      to_agent_id TEXT,
       type TEXT NOT NULL DEFAULT 'CHAT' CHECK(type IN ('CHAT','TASK','RESULT','SYSTEM')),
       content TEXT NOT NULL,
       mission_id TEXT REFERENCES missions(id),

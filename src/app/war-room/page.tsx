@@ -23,7 +23,7 @@ export default function WarRoomPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [agents, setAgents] = useState<AgentOverview[]>([]);
   const [autoInput, setAutoInput] = useState("");
-  const [autoResult, setAutoResult] = useState("");
+  const [autoMessage, setAutoMessage] = useState("");
   const [isDispatching, setIsDispatching] = useState(false);
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function WarRoomPage() {
     e.preventDefault();
     if (!autoInput.trim() || isDispatching) return;
     setIsDispatching(true);
-    setAutoResult("");
+    setAutoMessage("");
 
     try {
       const res = await fetch("/api/missions", {
@@ -55,18 +55,18 @@ export default function WarRoomPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: autoInput.slice(0, 50), input: autoInput, auto: true }),
       });
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          setAutoResult((prev) => prev + decoder.decode(value));
-        }
+      const data = await res.json();
+      if (data.success) {
+        setAutoMessage(`Mission queued (ID: ${data.data.id}). Cowork จะหยิบงานนี้ไปทำ`);
+      } else {
+        setAutoMessage(`Error: ${data.error}`);
       }
+    } catch (err) {
+      setAutoMessage("Error: " + (err instanceof Error ? err.message : "Unknown"));
     } finally {
       setIsDispatching(false);
       setAutoInput("");
+      fetchData();
     }
   }
 
@@ -104,7 +104,9 @@ export default function WarRoomPage() {
       {/* Auto Dispatch */}
       <div className="bg-bg-card border border-border-dim rounded-lg p-4 mb-6">
         <h2 className="text-accent-green text-sm font-bold mb-3">AUTO-DISPATCH</h2>
-        <p className="text-text-dim text-xs mb-3">เลขาจะวิเคราะห์งานแล้วส่งต่อให้ agent ที่เหมาะสม</p>
+        <p className="text-text-dim text-xs mb-3">
+          สร้าง mission → Cowork หยิบงาน → เลขาวิเคราะห์ → ส่งต่อ agent ที่เหมาะสม
+        </p>
         <form onSubmit={handleAutoDispatch} className="flex gap-2">
           <input
             value={autoInput}
@@ -117,12 +119,12 @@ export default function WarRoomPage() {
             disabled={isDispatching}
             className="bg-accent-green text-black px-4 py-2 rounded text-sm font-bold"
           >
-            {isDispatching ? "DISPATCHING..." : "DISPATCH"}
+            {isDispatching ? "QUEUING..." : "DISPATCH"}
           </button>
         </form>
-        {autoResult && (
-          <div className="mt-3 bg-bg-dark rounded p-3 text-sm text-text-primary whitespace-pre-wrap max-h-[300px] overflow-y-auto">
-            {autoResult}
+        {autoMessage && (
+          <div className="mt-3 bg-accent-green/10 border border-accent-green/30 rounded p-3 text-sm text-accent-green">
+            {autoMessage}
           </div>
         )}
       </div>

@@ -1,29 +1,18 @@
 import { v4 as uuid } from "uuid";
-import { getAllAgents, getAgent, createMission, updateMission, createMessage } from "./db";
-import { executeAgentTask, delegateTask } from "./ai-engine";
-import type { Agent, MissionPriority } from "./types";
-
-// Active mission streams for WebSocket
-const activeStreams = new Map<string, { chunks: string[]; done: boolean; error?: string }>();
-
-export function getStream(missionId: string) {
-  return activeStreams.get(missionId);
-}
-
-export function getAllStreams() {
-  return activeStreams;
-}
+import { getAllAgents, getAgent, createMission, createMessage } from "./db";
+import type { Agent, Mission, MissionPriority } from "./types";
 
 /**
- * Dispatch a mission to a specific agent
+ * Create a PENDING mission for a specific agent.
+ * Cowork จะหยิบ mission นี้ไปประมวลผลผ่าน MCP tools.
  */
-export async function dispatchMission(params: {
+export function dispatchMission(params: {
   agentId: string;
   title: string;
   input: string;
   priority?: MissionPriority;
   parentMissionId?: string;
-}): Promise<{ missionId: string; result: string }> {
+}): Mission {
   const agent = getAgent(params.agentId);
   if (!agent) throw new Error(`Agent ${params.agentId} not found`);
 
@@ -36,110 +25,64 @@ export async function dispatchMission(params: {
     parent_mission_id: params.parentMissionId || null,
   });
 
-  // Track streaming
-  const stream: { chunks: string[]; done: boolean; error?: string } = { chunks: [], done: false };
-  activeStreams.set(mission.id, stream);
+  // Log dispatch message
+  createMessage({
+    from_agent_id: "system",
+    to_agent_id: params.agentId,
+    type: "TASK",
+    content: `Mission dispatched: ${params.title}`,
+    mission_id: mission.id,
+  });
 
-  try {
-    const result = await executeAgentTask({
-      agent,
-      input: params.input,
-      missionId: mission.id,
-      onChunk: (chunk) => {
-        stream.chunks.push(chunk);
-      },
-      onComplete: () => {
-        stream.done = true;
-      },
-      onError: (err) => {
-        stream.done = true;
-        stream.error = err;
-      },
-    });
-
-    return { missionId: mission.id, result };
-  } finally {
-    // Clean up after 5 minutes
-    setTimeout(() => activeStreams.delete(mission.id), 5 * 60 * 1000);
-  }
+  return mission;
 }
 
 /**
- * Auto-dispatch: Let the secretary (เลขา) analyze and route the task
+ * Auto-dispatch: สร้าง mission ให้เลขา route
+ * Cowork จะอ่าน mission นี้ → ดู agent catalog → เลือก agent → delegate
  */
-export async function autoDispatch(params: {
+export function autoDispatchMission(params: {
   title: string;
   input: string;
   priority?: MissionPriority;
-}): Promise<{ missionId: string; agentId: string; result: string }> {
+}): Mission {
   const agents = getAllAgents();
   const secretary = agents.find((a) => a.category === "CORE");
 
   if (!secretary) throw new Error("No CORE agent found for routing");
 
-  // Build agent catalog for secretary
+  // Build agent catalog for Cowork to read
   const agentCatalog = agents
     .filter((a) => a.id !== secretary.id)
     .map((a) => `- ${a.id}: ${a.name} (${a.category}) — ${a.role}`)
     .join("\n");
 
-  const routingPrompt = `You are the team coordinator. Analyze this task and decide which agent should handle it.
+  const routingInput = `[AUTO-DISPATCH] วิเคราะห์งานนี้แล้วเลือก agent ที่เหมาะสม:
 
-Available agents:
+งาน: ${params.input}
+
+Agent ที่มี:
 ${agentCatalog}
 
-Task: ${params.input}
+คำแนะนำ: ใช้ process_next_mission เพื่ออ่านงานนี้ แล้วใช้ dispatch_mission ส่งต่อให้ agent ที่เหมาะสม`;
 
-Respond with ONLY the agent ID that should handle this task. Nothing else.`;
-
-  // Ask secretary to route
-  const routingMission = createMission({
+  const mission = createMission({
     id: uuid(),
     title: `[Routing] ${params.title}`,
     agent_id: secretary.id,
-    input: routingPrompt,
-    priority: "HIGH",
+    input: routingInput,
+    priority: params.priority || "NORMAL",
   });
 
-  const routingResult = await executeAgentTask({
-    agent: secretary,
-    input: routingPrompt,
-    missionId: routingMission.id,
-  });
-
-  // Find the target agent
-  const targetId = routingResult.trim();
-  const targetAgent = getAgent(targetId);
-
-  if (!targetAgent) {
-    // Fallback: secretary handles it
-    return dispatchMission({
-      agentId: secretary.id,
-      title: params.title,
-      input: params.input,
-      priority: params.priority,
-      parentMissionId: routingMission.id,
-    }).then((r) => ({ ...r, agentId: secretary.id }));
-  }
-
-  // Delegate to target agent
   createMessage({
-    from_agent_id: secretary.id,
-    to_agent_id: targetAgent.id,
+    from_agent_id: "system",
+    to_agent_id: secretary.id,
     type: "TASK",
-    content: `Routed task: ${params.title}`,
-    mission_id: routingMission.id,
+    content: `Auto-dispatch requested: ${params.title}`,
+    mission_id: mission.id,
   });
 
-  const result = await dispatchMission({
-    agentId: targetAgent.id,
-    title: params.title,
-    input: params.input,
-    priority: params.priority,
-    parentMissionId: routingMission.id,
-  });
-
-  return { ...result, agentId: targetAgent.id };
+  return mission;
 }
 
 /**
