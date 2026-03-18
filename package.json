@@ -1,7 +1,7 @@
 {
-  "name": "claudeagent",
+  "name": "claude-gank",
   "version": "1.0.0",
-  "description": "",
+  "description": "Multi-Agent AI Dashboard — control 20 AI agents from a single dashboard, powered by Claude Cowork (no API key needed)",
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
@@ -11,13 +11,20 @@
     "mcp:build": "cd mcp-server && npx tsc",
     "mcp:start": "node mcp-server/dist/index.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "http://local_proxy@127.0.0.1:33345/git/kpcrmv4/ClaudeAgent"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "claude",
+    "ai-agents",
+    "multi-agent",
+    "dashboard",
+    "mcp",
+    "cowork",
+    "nextjs",
+    "sqlite",
+    "cyberpunk",
+    "ai-dashboard"
+  ],
+  "author": "Powered by Mr.KKD",
+  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@tailwindcss/postcss": "^4.2.2",
