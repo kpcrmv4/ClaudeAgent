@@ -35,7 +35,7 @@ export default function SystemPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-text-dim">Engine</span>
-              <span className="text-text-primary">Anthropic Claude API</span>
+              <span className="text-text-primary">Claude Cowork (via MCP)</span>
             </div>
             <div className="flex justify-between">
               <span className="text-text-dim">Database</span>
