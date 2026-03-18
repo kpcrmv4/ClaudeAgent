@@ -46,6 +46,57 @@ export default function BirdEyePage() {
   const [isLive, setIsLive] = useState(true);
   const previousMissionsRef = useRef<Map<string, string>>(new Map());
 
+  // Dispatch form state
+  const [dispatchTitle, setDispatchTitle] = useState("");
+  const [dispatchInput, setDispatchInput] = useState("");
+  const [dispatchPriority, setDispatchPriority] = useState<"LOW" | "NORMAL" | "HIGH" | "URGENT">("NORMAL");
+  const [isDispatching, setIsDispatching] = useState(false);
+  const [dispatchResult, setDispatchResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const handleDispatch = async () => {
+    if (!selectedAgent || !dispatchTitle.trim() || !dispatchInput.trim()) return;
+    setIsDispatching(true);
+    setDispatchResult(null);
+    try {
+      const res = await fetch("/api/missions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId: selectedAgent.id,
+          title: dispatchTitle.trim(),
+          input: dispatchInput.trim(),
+          priority: dispatchPriority,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDispatchResult({ success: true, message: `Mission dispatched to ${selectedAgent.name}!` });
+        setDispatchTitle("");
+        setDispatchInput("");
+        setDispatchPriority("NORMAL");
+        // Trigger sparkle at agent position
+        const pos = getAgentPosition(selectedAgent.id);
+        if (pos) {
+          setParticleTriggers((prev) => [...prev, {
+            x: pos.x,
+            y: pos.y,
+            type: "sparkle",
+            color: SPRITE_COLORS[selectedAgent.category] || "#22c55e",
+            id: `dispatch-${Date.now()}`,
+          }]);
+        }
+        // Refresh data immediately
+        fetchData();
+      } else {
+        setDispatchResult({ success: false, message: data.error || "Dispatch failed" });
+      }
+    } catch {
+      setDispatchResult({ success: false, message: "Network error" });
+    } finally {
+      setIsDispatching(false);
+    }
+  };
+
   const fetchData = useCallback(async () => {
     try {
       const [agentsRes, missionsRes, messagesRes] = await Promise.all([
@@ -253,7 +304,7 @@ export default function BirdEyePage() {
         />
       </div>
 
-      {/* Selected agent detail panel */}
+      {/* Selected agent detail panel + dispatch */}
       {selectedAgent && (
         <div className="mt-4 bg-bg-card rounded-lg border border-border-dim p-4">
           <div className="flex items-center justify-between">
@@ -278,13 +329,15 @@ export default function BirdEyePage() {
               </span>
             </div>
             <button
-              onClick={() => setSelectedAgent(null)}
+              onClick={() => { setSelectedAgent(null); setDispatchResult(null); }}
               className="text-text-dim hover:text-text-primary transition-colors text-sm"
             >
               ✕ ปิด
             </button>
           </div>
           <p className="text-text-secondary text-xs mt-2">{selectedAgent.role}</p>
+
+          {/* Current mission display */}
           {runningMissions.get(selectedAgent.id) && (
             <div className="mt-3 bg-bg-dark rounded p-3 border border-border-dim">
               <p className="text-accent-green text-xs font-bold">🔥 CURRENT MISSION</p>
@@ -294,11 +347,90 @@ export default function BirdEyePage() {
               </p>
             </div>
           )}
+
+          {/* Last completed mission output */}
+          {(() => {
+            const lastCompleted = missions.find(
+              (m) => m.agent_id === selectedAgent.id && m.status === "COMPLETED"
+            );
+            if (!lastCompleted || runningMissions.get(selectedAgent.id)) return null;
+            return (
+              <div className="mt-3 bg-bg-dark rounded p-3 border border-border-dim">
+                <p className="text-accent-cyan text-xs font-bold">✅ LAST COMPLETED: {lastCompleted.title}</p>
+                <p className="text-text-secondary text-xs mt-1 whitespace-pre-wrap leading-relaxed">
+                  {lastCompleted.output?.slice(0, 300)}
+                  {lastCompleted.output && lastCompleted.output.length > 300 ? "..." : ""}
+                </p>
+              </div>
+            );
+          })()}
+
+          {/* Dispatch form */}
+          <div className="mt-4 border-t border-border-dim pt-4">
+            <p className="text-text-dim text-xs font-bold mb-3 tracking-wider">🚀 DISPATCH MISSION</p>
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  placeholder="ชื่อ mission..."
+                  value={dispatchTitle}
+                  onChange={(e) => setDispatchTitle(e.target.value)}
+                  className="flex-1 bg-bg-dark border border-border-dim rounded px-3 py-2 text-sm text-text-primary placeholder-text-dim focus:outline-none focus:border-text-dim transition-colors"
+                />
+                <select
+                  value={dispatchPriority}
+                  onChange={(e) => setDispatchPriority(e.target.value as typeof dispatchPriority)}
+                  className="bg-bg-dark border border-border-dim rounded px-2 py-2 text-xs text-text-secondary focus:outline-none focus:border-text-dim"
+                >
+                  <option value="LOW">LOW</option>
+                  <option value="NORMAL">NORMAL</option>
+                  <option value="HIGH">HIGH</option>
+                  <option value="URGENT">URGENT</option>
+                </select>
+              </div>
+              <textarea
+                placeholder="รายละเอียดงานที่ต้องการให้ทำ..."
+                value={dispatchInput}
+                onChange={(e) => setDispatchInput(e.target.value)}
+                rows={3}
+                className="w-full bg-bg-dark border border-border-dim rounded px-3 py-2 text-sm text-text-primary placeholder-text-dim focus:outline-none focus:border-text-dim transition-colors resize-none"
+              />
+              <div className="flex items-center justify-between">
+                <div>
+                  {dispatchResult && (
+                    <span className={`text-xs ${dispatchResult.success ? "text-accent-green" : "text-accent-red"}`}>
+                      {dispatchResult.success ? "✅" : "❌"} {dispatchResult.message}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={handleDispatch}
+                  disabled={isDispatching || !dispatchTitle.trim() || !dispatchInput.trim()}
+                  className={`px-4 py-2 rounded text-xs font-bold tracking-wider transition-all ${
+                    isDispatching || !dispatchTitle.trim() || !dispatchInput.trim()
+                      ? "bg-border-dim text-text-dim cursor-not-allowed"
+                      : "text-black hover:brightness-110"
+                  }`}
+                  style={
+                    !isDispatching && dispatchTitle.trim() && dispatchInput.trim()
+                      ? {
+                          backgroundColor: SPRITE_COLORS[selectedAgent.category],
+                          boxShadow: `0 0 12px ${SPRITE_COLORS[selectedAgent.category]}40`,
+                        }
+                      : undefined
+                  }
+                >
+                  {isDispatching ? "⏳ DISPATCHING..." : "🚀 DISPATCH"}
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Recent messages from/to this agent */}
           {recentMessages.filter(
             (m) => m.from_agent_id === selectedAgent.id || m.to_agent_id === selectedAgent.id
           ).length > 0 && (
-            <div className="mt-3">
+            <div className="mt-3 border-t border-border-dim pt-3">
               <p className="text-text-dim text-xs font-bold mb-2">💬 RECENT COMMS</p>
               {recentMessages
                 .filter(
