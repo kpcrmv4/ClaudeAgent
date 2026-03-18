@@ -36,3 +36,6 @@ next-env.d.ts
 
 # database
 *.db
+
+# mcp-server build output
+mcp-server/dist/
