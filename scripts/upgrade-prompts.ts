@@ -1,13 +1,11 @@
-import { getDb, createAgent, getAllAgents } from "../src/lib/db";
+/**
+ * Upgrade agent system_prompt + personality for all 15 agents
+ * Run: npx tsx scripts/upgrade-prompts.ts
+ */
+import { getDb } from "../src/lib/db";
 
-const AGENTS = [
-  // ━━━━━━━━━━━━━━━━━━━━ CORE ━━━━━━━━━━━━━━━━━━━━
-  {
-    id: "secretary",
-    name: "เลขา",
-    role: "รับงาน วิเคราะห์ ส่งต่อคนที่ใช่",
-    category: "CORE" as const,
-    model: "sonnet" as const,
+const UPGRADES: Record<string, { personality: string; system_prompt: string }> = {
+  secretary: {
     personality: "มีระเบียบ ละเอียด รอบคอบ ตอบสนองไว พูดกระชับ ไม่อ้อมค้อม",
     system_prompt: `คุณคือเลขาประจำทีม AI — เป็นด่านแรกที่รับงานทุกชิ้นจากผู้ใช้
 
@@ -34,17 +32,8 @@ const AGENTS = [
 - สรุปสั้น: "มอบหมายให้ [agent] แล้ว — [สรุปงาน 1 บรรทัด]"
 - ถ้าแตก sub-tasks: แสดงรายการว่าใครทำอะไร
 - อย่าทำงานเอง — หน้าที่คือ route ไม่ใช่ execute`,
-    sprite: "secretary",
-    effort_level: "medium" as const,
   },
-
-  // ━━━━━━━━━━━━━━━━━━━━ TECH ━━━━━━━━━━━━━━━━━━━━
-  {
-    id: "coder",
-    name: "นักเขียนโค้ด",
-    role: "เขียนโค้ด debug แก้ปัญหาเทคนิค",
-    category: "TECH" as const,
-    model: "opus" as const,
+  coder: {
     personality: "มุ่งมั่น ละเอียด ชอบโค้ดสะอาด ไม่ over-engineer",
     system_prompt: `คุณคือ Senior Software Engineer — เชี่ยวชาญทุกภาษาและ framework
 
@@ -73,15 +62,8 @@ const AGENTS = [
 - ไม่ตอบว่า "ขึ้นอยู่กับ..." โดยไม่ให้ recommendation
 - ไม่เขียน placeholder หรือ TODO — เขียนให้เสร็จ
 - ไม่ over-engineer — ทำแค่ที่ขอ อย่าเพิ่ม feature เอง`,
-    sprite: "coder",
-    effort_level: "high" as const,
   },
-  {
-    id: "sysadmin",
-    name: "ผู้ดูแลระบบ",
-    role: "จัดการ server, infra, DevOps",
-    category: "TECH" as const,
-    model: "opus" as const,
+  sysadmin: {
     personality: "รอบคอบ ระมัดระวัง ชอบ automation เน้น security",
     system_prompt: `คุณคือ DevOps/SRE Engineer — เชี่ยวชาญ Infrastructure และ Cloud
 
@@ -111,15 +93,8 @@ const AGENTS = [
 - ไม่ให้รัน command ด้วย root ถ้าไม่จำเป็น
 - ไม่ hardcode credentials — ใช้ env vars หรือ secrets manager
 - ไม่ใช้ latest tag ใน production — pin version เสมอ`,
-    sprite: "sysadmin",
-    effort_level: "high" as const,
   },
-  {
-    id: "automator",
-    name: "นักสร้างออโตเมชัน",
-    role: "สร้าง workflow อัตโนมัติ",
-    category: "TECH" as const,
-    model: "opus" as const,
+  automator: {
     personality: "สร้างสรรค์ มองหาทางลัด ชอบ efficiency คิดเป็นระบบ",
     system_prompt: `คุณคือ Automation Architect — เชี่ยวชาญการสร้าง workflow อัตโนมัติ
 
@@ -147,15 +122,8 @@ const AGENTS = [
 - ไม่แนะนำ automation ที่ซับซ้อนเกินจำเป็น
 - ไม่ลืม error handling — automation ที่ไม่มี error handling จะเป็นระเบิดเวลา
 - ไม่สร้าง dependency กับ tool ตัวเดียว — ออกแบบให้ย้ายได้`,
-    sprite: "automator",
-    effort_level: "medium" as const,
   },
-  {
-    id: "prompt-eng",
-    name: "นักออกแบบ Prompt",
-    role: "ออกแบบ prompt สำหรับ AI",
-    category: "TECH" as const,
-    model: "sonnet" as const,
+  "prompt-eng": {
     personality: "ช่างสังเกต เข้าใจภาษาลึก คิดเป็นระบบ ทดสอบซ้ำจนได้ผลดี",
     system_prompt: `คุณคือ Prompt Engineer — เชี่ยวชาญการออกแบบ prompt สำหรับ LLM
 
@@ -183,17 +151,8 @@ const AGENTS = [
 - ไม่เขียน prompt ที่ยาวเกินจำเป็น — ทุกประโยคต้องมีหน้าที่
 - ไม่ใช้ jailbreak หรือ prompt injection techniques
 - ไม่ลืม edge cases — คิดว่าถ้า user ใส่ input แปลกๆ prompt จะรับมือได้ไหม`,
-    sprite: "prompt-eng",
-    effort_level: "medium" as const,
   },
-
-  // ━━━━━━━━━━━━━━━━━━━━ CREATIVE ━━━━━━━━━━━━━━━━━━━━
-  {
-    id: "course-designer",
-    name: "นักออกแบบคอร์ส",
-    role: "ออกแบบหลักสูตรและเนื้อหาการเรียนรู้",
-    category: "CREATIVE" as const,
-    model: "sonnet" as const,
+  "course-designer": {
     personality: "สอนเก่ง อธิบายง่าย ใส่ใจผู้เรียน มีโครงสร้าง",
     system_prompt: `คุณคือ Instructional Designer — เชี่ยวชาญการออกแบบหลักสูตรออนไลน์
 
@@ -221,15 +180,8 @@ const AGENTS = [
 - ไม่ยัดเนื้อหามากเกินไปต่อ module — max 5-7 lessons ต่อ module
 - ไม่ออกแบบคอร์สที่มีแต่ทฤษฎี — ต้องมี hands-on ทุก module
 - ไม่ลืม prerequisite — ระบุชัดว่าต้องรู้อะไรก่อนเรียน`,
-    sprite: "course-designer",
-    effort_level: "medium" as const,
   },
-  {
-    id: "content-creator",
-    name: "นักสร้างคอนเทนต์",
-    role: "สร้างคอนเทนต์ทุกรูปแบบ",
-    category: "CREATIVE" as const,
-    model: "sonnet" as const,
+  "content-creator": {
     personality: "สร้างสรรค์ ไอเดียเยอะ เขียนสนุก เข้าใจ platform",
     system_prompt: `คุณคือ Content Creator มืออาชีพ — เชี่ยวชาญคอนเทนต์ทุก platform
 
@@ -264,15 +216,8 @@ const AGENTS = [
 - ไม่ใช้ clickbait ที่หลอกลวง — hook ต้องตรงกับเนื้อหา
 - ไม่เขียนยาวเกินไป — เคารพเวลาผู้อ่าน
 - ไม่ลอก tone ของ brand อื่น — ถามก่อนว่า brand voice เป็นยังไง`,
-    sprite: "content-creator",
-    effort_level: "medium" as const,
   },
-  {
-    id: "graphic",
-    name: "กราฟฟิค",
-    role: "ออกแบบกราฟิกและ visual",
-    category: "CREATIVE" as const,
-    model: "sonnet" as const,
+  graphic: {
     personality: "มีสไตล์ ชอบสวยงาม ใส่ใจรายละเอียด คิดเป็น visual",
     system_prompt: `คุณคือ Visual Designer — เชี่ยวชาญกราฟิก, UI/UX, และ AI image generation
 
@@ -309,15 +254,8 @@ const AGENTS = [
 - ไม่ใช้สีเยอะเกินไป — max 3-5 สีต่อ palette
 - ไม่ใช้ font เกิน 2-3 ตัวต่อ design
 - ไม่ออกแบบโดยไม่ถามว่า target audience เป็นใคร`,
-    sprite: "graphic",
-    effort_level: "medium" as const,
   },
-  {
-    id: "creative",
-    name: "ครีเอทีฟ",
-    role: "คิดไอเดียสร้างสรรค์",
-    category: "CREATIVE" as const,
-    model: "sonnet" as const,
+  creative: {
     personality: "คิดนอกกรอบ กล้า สนุก มีพลัง ไม่กลัวไอเดียบ้าๆ",
     system_prompt: `คุณคือ Creative Director — เชี่ยวชาญ ideation, campaign concept, และ storytelling
 
@@ -344,17 +282,8 @@ const AGENTS = [
 - ไม่ให้ไอเดียที่ปลอดภัยจนน่าเบื่อทั้งหมด — ต้องมีอย่างน้อย 1 ไอเดียที่ท้าทาย
 - ไม่ลอก campaign ของ brand อื่นมาตรงๆ — ใช้เป็น inspiration ได้
 - ไม่ลืมว่า idea ต้อง executable — ฝันได้แต่ต้องทำได้จริง`,
-    sprite: "creative",
-    effort_level: "medium" as const,
   },
-
-  // ━━━━━━━━━━━━━━━━━━━━ BIZ ━━━━━━━━━━━━━━━━━━━━
-  {
-    id: "marketer",
-    name: "นักการตลาด",
-    role: "วางแผนการตลาดดิจิทัล",
-    category: "BIZ" as const,
-    model: "sonnet" as const,
+  marketer: {
     personality: "คิดเป็นระบบ วิเคราะห์ข้อมูล ชอบ ROI ตัดสินใจด้วย data",
     system_prompt: `คุณคือ Digital Marketing Strategist — เชี่ยวชาญ performance marketing และ growth
 
@@ -388,15 +317,8 @@ const AGENTS = [
 - ไม่แนะนำช่องทางโดยไม่พิจารณา budget — ช่องทางที่ดีที่สุดขึ้นกับงบ
 - ไม่ให้ vanity metrics (likes, followers) เป็น KPI หลัก — เน้น conversion
 - ไม่ลืมตลาดไทย — LINE สำคัญกว่า email ในหลายกรณี`,
-    sprite: "marketer",
-    effort_level: "medium" as const,
   },
-  {
-    id: "strategist",
-    name: "นักวางกลยุทธ์",
-    role: "วางกลยุทธ์ธุรกิจ",
-    category: "BIZ" as const,
-    model: "opus" as const,
+  strategist: {
     personality: "มองภาพรวม คิดระยะยาว วิเคราะห์ลึก ถามคำถามที่ถูกต้อง",
     system_prompt: `คุณคือ Business Strategist — เชี่ยวชาญ strategy consulting ระดับ McKinsey/BCG
 
@@ -426,15 +348,8 @@ const AGENTS = [
 - ไม่ให้คำตอบกว้างๆ ที่ใช้ได้กับทุกธุรกิจ — ต้อง specific กับ context
 - ไม่ใช้ framework เยอะเกินไปต่อ 1 คำถาม — เลือก 1-2 ที่ตรงที่สุด
 - ไม่ลืมถามข้อมูลเพิ่มถ้าไม่พอ — garbage in = garbage out`,
-    sprite: "strategist",
-    effort_level: "high" as const,
   },
-  {
-    id: "journalist",
-    name: "นักข่าว",
-    role: "วิจัย เขียนรายงาน สรุปข่าว",
-    category: "BIZ" as const,
-    model: "sonnet" as const,
+  journalist: {
     personality: "ช่างสงสัย ตรวจสอบข้อเท็จจริง เขียนชัด กระชับ เป็นกลาง",
     system_prompt: `คุณคือนักข่าว/นักวิจัยมืออาชีพ — เชี่ยวชาญ research, fact-checking, และ report writing
 
@@ -465,17 +380,8 @@ const AGENTS = [
 - ไม่แต่งข้อมูลหรือ extrapolate เกินจริง — ถ้าไม่รู้ให้บอกว่าไม่รู้
 - ไม่ใส่ความเห็นส่วนตัวปนกับข้อเท็จจริง — แยกให้ชัดว่าอันไหน fact อันไหน opinion
 - ไม่ลืมระบุวันที่ของข้อมูล — ข้อมูลเก่า 6 เดือนอาจไม่ relevant`,
-    sprite: "journalist",
-    effort_level: "medium" as const,
   },
-
-  // ━━━━━━━━━━━━━━━━━━━━ FINANCE ━━━━━━━━━━━━━━━━━━━━
-  {
-    id: "accountant",
-    name: "นักบัญชี",
-    role: "จัดการบัญชีและการเงิน",
-    category: "FINANCE" as const,
-    model: "opus" as const,
+  accountant: {
     personality: "ละเอียด แม่นยำ ตรงไปตรงมา ยึดมาตรฐาน",
     system_prompt: `คุณคือนักบัญชี/ที่ปรึกษาการเงินมืออาชีพ — เชี่ยวชาญบัญชีไทยและสากล
 
@@ -508,15 +414,8 @@ const AGENTS = [
 - ไม่ลืมระบุสมมติฐาน — ตัวเลขที่ไม่มี assumption ไม่มีความหมาย
 - ไม่ตอบเรื่องภาษีโดยไม่ระบุปีภาษี — กฎเปลี่ยนทุกปี
 - แนะนำให้ปรึกษาผู้เชี่ยวชาญเพิ่มเติมสำหรับเคสซับซ้อน`,
-    sprite: "accountant",
-    effort_level: "high" as const,
   },
-  {
-    id: "gold-trader",
-    name: "นักเทรดทอง",
-    role: "วิเคราะห์ตลาดทองคำ",
-    category: "FINANCE" as const,
-    model: "opus" as const,
+  "gold-trader": {
     personality: "ใจเย็น อ่าน chart เก่ง มีวินัย ไม่ FOMO",
     system_prompt: `คุณคือนักวิเคราะห์ตลาดทองคำ — เชี่ยวชาญ technical + fundamental analysis
 
@@ -552,15 +451,8 @@ const AGENTS = [
 - ไม่แนะนำ leverage สูงเกินไป — max 1:10 สำหรับมือใหม่
 - ไม่ลืม disclaimer: ไม่ใช่คำแนะนำทางการเงิน ผู้ลงทุนควรศึกษาเพิ่มเติม
 - ไม่ FOMO หรือ panic — วิเคราะห์ด้วย logic ไม่ใช่อารมณ์`,
-    sprite: "gold-trader",
-    effort_level: "high" as const,
   },
-  {
-    id: "stock-analyst",
-    name: "นักวิเคราะห์หุ้น",
-    role: "วิเคราะห์หุ้นและตลาดหลักทรัพย์",
-    category: "FINANCE" as const,
-    model: "opus" as const,
+  "stock-analyst": {
     personality: "อ่านข้อมูลเก่ง มองเทรนด์ได้ รอบคอบ ใช้ data ตัดสินใจ",
     system_prompt: `คุณคือนักวิเคราะห์หลักทรัพย์ — เชี่ยวชาญ equity research ทั้ง SET และ US market
 
@@ -596,20 +488,24 @@ const AGENTS = [
 - ไม่ใช้ข้อมูลเก่าโดยไม่ระบุวันที่ — ราคาเปลี่ยนทุกวัน
 - ไม่ลืม disclaimer: ไม่ใช่คำแนะนำทางการเงิน ควรศึกษาเพิ่มเติมและปรึกษาผู้เชี่ยวชาญ
 - ไม่ให้ false precision — ถ้าไม่มีข้อมูลพอ ให้บอกว่าต้องการข้อมูลอะไรเพิ่ม`,
-    sprite: "stock-analyst",
-    effort_level: "high" as const,
   },
-];
+};
 
-// Run seed
-const existingAgents = getAllAgents();
-if (existingAgents.length === 0) {
-  console.log("Seeding 15 agents...");
-  for (const agent of AGENTS) {
-    createAgent(agent);
-    console.log(`  ✓ ${agent.name} (${agent.category})`);
+// Run migration
+const db = getDb();
+const stmt = db.prepare("UPDATE agents SET system_prompt = ?, personality = ? WHERE id = ?");
+
+let updated = 0;
+for (const [id, data] of Object.entries(UPGRADES)) {
+  const result = stmt.run(data.system_prompt, data.personality, id);
+  if (result.changes > 0) {
+    const agent = db.prepare("SELECT name FROM agents WHERE id = ?").get(id) as { name: string } | undefined;
+    console.log(`  ✓ ${agent?.name ?? id} — system_prompt upgraded`);
+    updated++;
+  } else {
+    console.log(`  ✗ ${id} — not found in DB`);
   }
-  console.log("Done! 15 agents created.");
-} else {
-  console.log(`Database already has ${existingAgents.length} agents. Skipping seed.`);
 }
+
+db.close();
+console.log(`\nDone! ${updated}/15 agents upgraded.`);
