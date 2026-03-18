@@ -10,7 +10,8 @@
     "seed": "npx tsx scripts/seed.ts",
     "mcp:build": "cd mcp-server && npx tsc",
     "mcp:start": "node mcp-server/dist/index.js",
-    "setup:cowork": "npx tsx scripts/setup-cowork.ts"
+    "setup:cowork": "npx tsx scripts/setup-cowork.ts",
+    "setup": "npx tsx scripts/setup-all.ts"
   },
   "keywords": [
     "claude",
