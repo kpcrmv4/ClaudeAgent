@@ -1,13 +1,15 @@
 "use client";
 
 import type { Agent } from "@/lib/types";
+import { useLang } from "@/lib/context";
+import { useSpriteStyle, renderSprite } from "@/lib/sprites";
 
-const CATEGORY_COLORS: Record<string, string> = {
-  CORE: "bg-cat-core text-black",
-  TECH: "bg-cat-tech text-black",
-  CREATIVE: "bg-cat-creative text-white",
-  BIZ: "bg-cat-biz text-white",
-  FINANCE: "bg-cat-finance text-black",
+const CAT_COLORS: Record<string, { bg: string; text: string }> = {
+  CORE: { bg: "bg-cat-core/12", text: "text-cat-core" },
+  TECH: { bg: "bg-cat-tech/12", text: "text-cat-tech" },
+  CREATIVE: { bg: "bg-cat-creative/12", text: "text-cat-creative" },
+  BIZ: { bg: "bg-cat-biz/12", text: "text-cat-biz" },
+  FINANCE: { bg: "bg-cat-finance/12", text: "text-cat-finance" },
 };
 
 const CATEGORY_GLOW: Record<string, string> = {
@@ -19,55 +21,37 @@ const CATEGORY_GLOW: Record<string, string> = {
 };
 
 const SPRITE_COLORS: Record<string, string> = {
-  CORE: "#22c55e",
-  TECH: "#06b6d4",
-  CREATIVE: "#a855f7",
-  BIZ: "#ef4444",
+  CORE: "#10b981",
+  TECH: "#22d3ee",
+  CREATIVE: "#a78bfa",
+  BIZ: "#f43f5e",
   FINANCE: "#f59e0b",
 };
 
-// Generate a simple pixel art avatar using SVG
-function PixelAvatar({ name, category }: { name: string; category: string }) {
+function AgentAvatar({ name, category }: { name: string; category: string }) {
   const color = SPRITE_COLORS[category] || "#888";
-  // Simple hash from name for variety
+  const { spriteStyle } = useSpriteStyle();
   const hash = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const bodyType = hash % 3;
+  const variant = hash % 4;
 
   return (
-    <svg width="48" height="48" viewBox="0 0 16 16" className="pixel-art">
-      {/* Head */}
-      <rect x="5" y="1" width="6" height="6" fill={color} opacity="0.9" />
-      {/* Eyes */}
-      <rect x="6" y="3" width="1" height="1" fill="#fff" />
-      <rect x="9" y="3" width="1" height="1" fill="#fff" />
-      {/* Body variants */}
-      {bodyType === 0 && (
-        <>
-          <rect x="4" y="7" width="8" height="5" fill={color} opacity="0.7" />
-          <rect x="3" y="7" width="1" height="4" fill={color} opacity="0.5" />
-          <rect x="12" y="7" width="1" height="4" fill={color} opacity="0.5" />
-        </>
-      )}
-      {bodyType === 1 && (
-        <>
-          <rect x="5" y="7" width="6" height="5" fill={color} opacity="0.7" />
-          <rect x="3" y="8" width="2" height="3" fill={color} opacity="0.5" />
-          <rect x="11" y="8" width="2" height="3" fill={color} opacity="0.5" />
-        </>
-      )}
-      {bodyType === 2 && (
-        <>
-          <rect x="4" y="7" width="8" height="4" fill={color} opacity="0.7" />
-          <rect x="5" y="11" width="2" height="1" fill={color} opacity="0.6" />
-          <rect x="9" y="11" width="2" height="1" fill={color} opacity="0.6" />
-        </>
-      )}
-      {/* Legs */}
-      <rect x="5" y="12" width="2" height="3" fill={color} opacity="0.5" />
-      <rect x="9" y="12" width="2" height="3" fill={color} opacity="0.5" />
-    </svg>
+    <div
+      className="w-12 h-12 rounded-xl flex items-center justify-center"
+      style={{ backgroundColor: `${color}15` }}
+    >
+      <svg width="36" height="36" viewBox="-16 -16 32 32" className="pixel-art">
+        {renderSprite(spriteStyle, color, variant)}
+      </svg>
+    </div>
   );
 }
+
+const STATUS_MAP: Record<string, { labelKey: string; className: string }> = {
+  STANDBY: { labelKey: "standby", className: "text-text-dim" },
+  WORKING: { labelKey: "working", className: "text-accent-green status-working" },
+  ERROR: { labelKey: "error", className: "text-accent-red" },
+  OFFLINE: { labelKey: "offline", className: "text-text-dim opacity-50" },
+};
 
 interface AgentCardProps {
   agent: Agent;
@@ -75,33 +59,38 @@ interface AgentCardProps {
 }
 
 export function AgentCard({ agent, onClick }: AgentCardProps) {
+  const { t } = useLang();
+  const cat = CAT_COLORS[agent.category] || CAT_COLORS.CORE;
+  const status = STATUS_MAP[agent.status] || STATUS_MAP.STANDBY;
+  const statusLabel = t.agents[status.labelKey as keyof typeof t.agents] || agent.status;
+
   return (
     <div
-      className={`agent-card bg-bg-card rounded-lg p-4 cursor-pointer relative ${
+      className={`agent-card bg-bg-card rounded-xl p-4 cursor-pointer ${
         agent.status === "WORKING" ? CATEGORY_GLOW[agent.category] : ""
       }`}
       onClick={() => onClick?.(agent)}
     >
-      {/* Category badge */}
-      <span className={`badge absolute top-3 left-3 ${CATEGORY_COLORS[agent.category]}`}>
-        {agent.category}
-      </span>
-
-      {/* Sprite */}
-      <div className="flex justify-center my-4">
-        <PixelAvatar name={agent.name} category={agent.category} />
+      <div className="flex items-start gap-3">
+        <AgentAvatar name={agent.name} category={agent.category} />
+        <div className="flex-1 min-w-0">
+          <h3 className="text-text-primary text-sm font-semibold truncate mb-0.5">{agent.name}</h3>
+          <p className="text-text-dim text-xs truncate mb-2">{agent.role}</p>
+          <div className="flex items-center gap-2">
+            <span className={`badge ${cat.bg} ${cat.text}`}>
+              {t.categories[agent.category as keyof typeof t.categories] || agent.category}
+            </span>
+            <span className="text-text-dim text-[10px]">{agent.model}</span>
+          </div>
+        </div>
       </div>
 
-      {/* Info */}
-      <div className="text-center">
-        <h3 className="text-text-primary text-sm font-bold">{agent.name}</h3>
-        <p className="text-text-dim text-[11px] mt-1">
-          <span className={agent.status === "WORKING" ? "status-working" : ""}>
-            {agent.status}
-          </span>
-          {" · "}
-          <span className="text-text-dim">{agent.model}</span>
-        </p>
+      <div className="mt-3 pt-2.5 border-t border-border-dim flex items-center gap-2">
+        <div className={`w-1.5 h-1.5 rounded-full ${
+          agent.status === "WORKING" ? "bg-accent-green" :
+          agent.status === "ERROR" ? "bg-accent-red" : "bg-text-dim"
+        }`} />
+        <span className={`text-[11px] ${status.className}`}>{statusLabel}</span>
       </div>
     </div>
   );

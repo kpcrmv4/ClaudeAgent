@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLang } from "@/lib/context";
 
 interface Stats {
   totalAgents: number;
@@ -25,6 +26,7 @@ export default function WarRoomPage() {
   const [autoInput, setAutoInput] = useState("");
   const [autoMessage, setAutoMessage] = useState("");
   const [isDispatching, setIsDispatching] = useState(false);
+  const { t } = useLang();
 
   useEffect(() => {
     fetchData();
@@ -57,7 +59,7 @@ export default function WarRoomPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setAutoMessage(`Mission queued (ID: ${data.data.id}). Cowork จะหยิบงานนี้ไปทำ`);
+        setAutoMessage(`Mission queued (ID: ${data.data.id})`);
       } else {
         setAutoMessage(`Error: ${data.error}`);
       }
@@ -70,78 +72,74 @@ export default function WarRoomPage() {
     }
   }
 
-  const statusColor: Record<string, string> = {
-    STANDBY: "text-text-dim",
-    WORKING: "text-accent-green status-working",
-    ERROR: "text-accent-red",
-    OFFLINE: "text-text-dim opacity-50",
+  const statusDot: Record<string, string> = {
+    STANDBY: "bg-text-dim",
+    WORKING: "bg-accent-green",
+    ERROR: "bg-accent-red",
+    OFFLINE: "bg-text-dim opacity-40",
   };
 
   return (
     <div>
-      <h1 className="text-3xl font-bold tracking-wider mb-2">WAR ROOM</h1>
-      <p className="text-text-dim text-sm mb-6">// TEAM OVERVIEW & AUTO-DISPATCH</p>
+      <h1 className="text-2xl font-bold mb-1">{t.warRoom.title}</h1>
+      <p className="text-text-dim text-sm mb-6">{t.warRoom.subtitle}</p>
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
           {[
-            { label: "AGENTS", value: stats.totalAgents, color: "text-accent-cyan" },
-            { label: "ACTIVE", value: stats.activeAgents, color: "text-accent-green" },
-            { label: "MISSIONS", value: stats.totalMissions, color: "text-accent-amber" },
-            { label: "RUNNING", value: stats.runningMissions, color: "text-accent-green" },
-            { label: "COMPLETED", value: stats.completedMissions, color: "text-accent-cyan" },
-            { label: "MESSAGES", value: stats.totalMessages, color: "text-accent-purple" },
+            { label: t.warRoom.totalAgents, value: stats.totalAgents, accent: "stat-card-cyan" },
+            { label: t.warRoom.active, value: stats.activeAgents, accent: "stat-card-green" },
+            { label: t.warRoom.totalMissions, value: stats.totalMissions, accent: "stat-card-amber" },
+            { label: t.warRoom.running, value: stats.runningMissions, accent: "stat-card-green" },
+            { label: t.warRoom.completed, value: stats.completedMissions, accent: "stat-card-blue" },
+            { label: t.warRoom.messages, value: stats.totalMessages, accent: "stat-card-purple" },
           ].map((s) => (
-            <div key={s.label} className="bg-bg-card border border-border-dim rounded p-3 text-center">
-              <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-text-dim text-[10px] tracking-widest">{s.label}</div>
+            <div key={s.label} className={`bg-bg-card border border-border-dim rounded-xl p-4 ${s.accent}`}>
+              <div className="text-2xl font-bold text-text-primary">{s.value}</div>
+              <div className="text-text-dim text-[11px] mt-1">{s.label}</div>
             </div>
           ))}
         </div>
       )}
 
       {/* Auto Dispatch */}
-      <div className="bg-bg-card border border-border-dim rounded-lg p-4 mb-6">
-        <h2 className="text-accent-green text-sm font-bold mb-3">AUTO-DISPATCH</h2>
-        <p className="text-text-dim text-xs mb-3">
-          สร้าง mission → Cowork หยิบงาน → เลขาวิเคราะห์ → ส่งต่อ agent ที่เหมาะสม
-        </p>
+      <div className="bg-bg-card border border-border-dim rounded-xl p-5 mb-6">
+        <h2 className="text-text-primary text-sm font-bold mb-2">{t.warRoom.autoDispatch}</h2>
+        <p className="text-text-dim text-xs mb-4">{t.warRoom.autoNote}</p>
         <form onSubmit={handleAutoDispatch} className="flex gap-2">
           <input
             value={autoInput}
             onChange={(e) => setAutoInput(e.target.value)}
-            placeholder="สั่งงานทีม..."
-            className="flex-1 bg-bg-dark border border-border-dim rounded px-3 py-2 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent-green"
+            placeholder={t.warRoom.commandPlaceholder}
+            className="flex-1 bg-bg-input border border-border-dim rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent-green/50 transition-colors"
           />
           <button
             type="submit"
             disabled={isDispatching}
-            className="bg-accent-green text-black px-4 py-2 rounded text-sm font-bold"
+            className="bg-accent-green text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-40 transition-opacity"
           >
-            {isDispatching ? "QUEUING..." : "DISPATCH"}
+            {isDispatching ? t.warRoom.queuing : t.warRoom.dispatch}
           </button>
         </form>
         {autoMessage && (
-          <div className="mt-3 bg-accent-green/10 border border-accent-green/30 rounded p-3 text-sm text-accent-green">
+          <div className="mt-3 bg-accent-green/10 border border-accent-green/20 rounded-xl p-3 text-sm text-accent-green">
             {autoMessage}
           </div>
         )}
       </div>
 
       {/* Agent Status Grid */}
-      <div className="bg-bg-card border border-border-dim rounded-lg p-4">
-        <h2 className="text-accent-cyan text-sm font-bold mb-3">AGENT STATUS</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+      <div className="bg-bg-card border border-border-dim rounded-xl p-5">
+        <h2 className="text-text-primary text-sm font-bold mb-4">{t.warRoom.agentStatus}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
           {agents.map((a) => (
-            <div key={a.id} className="flex items-center justify-between bg-bg-dark rounded px-3 py-2">
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${a.status === "WORKING" ? "bg-accent-green" : a.status === "ERROR" ? "bg-accent-red" : "bg-text-dim"}`} />
+            <div key={a.id} className="flex items-center justify-between bg-bg-input rounded-lg px-3.5 py-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-2 h-2 rounded-full ${statusDot[a.status] || "bg-text-dim"}`} />
                 <span className="text-text-primary text-sm">{a.name}</span>
               </div>
-              <span className={`text-[10px] ${statusColor[a.status] || "text-text-dim"}`}>
-                {a.status} · {a.model}
-              </span>
+              <span className="text-text-dim text-[11px]">{a.model}</span>
             </div>
           ))}
         </div>
